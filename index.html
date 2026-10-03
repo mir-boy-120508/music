@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Background-Ready Endless Loop Player & Lyrics</title>
+    <title>M4A Endless Loop Player & Lyrics</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for Icons -->
@@ -32,27 +32,16 @@
         }
     </script>
     <style>
-        /* Custom scrollbar and glassmorphism effects */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f172a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .glass-panel {
             background: rgba(15, 23, 42, 0.75);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        .glow-effect {
-            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
-        }
-        /* Custom slider styles */
+        .glow-effect { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4); }
         input[type=range] {
             -webkit-appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -61,22 +50,19 @@
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
+            height: 16px; width: 16px;
             border-radius: 50%;
             background: #818cf8;
             cursor: pointer;
             box-shadow: 0 0 10px rgba(129, 140, 248, 0.8);
             transition: transform 0.1s ease;
         }
-        input[type=range]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white overflow-x-hidden">
 
-    <!-- Hidden native audio element for background playback -->
+    <!-- HTML5 Audio Element (iOS バックグラウンド再生のコア) -->
     <audio id="audio-player" playsinline preload="auto" loop></audio>
 
     <header class="w-full p-4 md:p-6 flex justify-between items-center z-10">
@@ -86,7 +72,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-300 via-white to-purple-300 bg-clip-text text-transparent">Endless Loop & Lyrics</h1>
-                <p class="text-xs text-slate-400">Background Playback & Media Session Enabled</p>
+                <p class="text-xs text-slate-400">iOS Compatible Loop Player</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -99,17 +85,11 @@
 
     <main class="flex-1 flex flex-col items-center justify-center p-4 max-w-4xl mx-auto w-full gap-6">
         
-        <!-- Visualizer & Track / Lyrics Container -->
         <div id="drop-zone" class="w-full relative glass-panel rounded-3xl p-6 md:p-8 border border-slate-800 transition-all duration-300 group flex flex-col items-center justify-between min-h-[320px] md:min-h-[380px] overflow-hidden">
             
-            <!-- Canvas Visualizer Background -->
-            <canvas id="visualizer" class="absolute inset-0 w-full h-full pointer-events-none opacity-80 z-0"></canvas>
-            
-            <!-- Glow Accent -->
             <div class="absolute -top-24 -left-24 w-60 h-60 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-24 -right-24 w-60 h-60 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
-            <!-- Idle / File Upload Prompt -->
             <div id="upload-prompt" class="relative z-10 my-auto flex flex-col items-center text-center p-6 space-y-4 transition-all duration-300">
                 <div class="w-20 h-20 rounded-full bg-slate-900/80 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:border-indigo-400 transition duration-300 glow-effect">
                     <i class="fa-solid fa-cloud-arrow-up text-3xl"></i>
@@ -132,31 +112,24 @@
                 <input type="file" id="lrc-input" accept=".lrc" class="hidden">
             </div>
 
-            <!-- Active Track & Lyrics Display -->
             <div id="track-info" class="relative z-10 hidden flex-col justify-between items-center text-center w-full h-full min-h-[300px] pointer-events-none">
-                
-                <!-- Upper Metadata -->
                 <div class="w-full flex flex-col items-center space-y-2 pt-2">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-medium backdrop-blur-md">
                         <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span>
-                        <span id="loop-mode-tag">バックグラウンド無限ループ有効</span>
+                        <span id="loop-mode-tag">無限ループ有効</span>
                     </div>
                     <h2 id="song-title" class="text-2xl md:text-3xl font-bold text-white tracking-wide truncate w-full px-4 drop-shadow-md">---</h2>
                     <p id="song-meta" class="text-xs text-slate-400 drop-shadow">00:00 / 00:00</p>
                 </div>
 
-                <!-- Lower LRC Lyrics Display -->
                 <div class="flex-1 w-full flex items-center justify-center p-4 my-auto">
                     <p id="lyrics-display" class="text-lg md:text-2xl font-semibold text-indigo-100 transition-opacity duration-200 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] text-center leading-relaxed">
-                        <!-- 歌詞動的表示 -->
                     </p>
                 </div>
-
             </div>
         </div>
 
         <div class="w-full glass-panel rounded-2xl p-4 md:p-6 space-y-4">
-            <!-- Progress Bar -->
             <div class="space-y-1">
                 <div class="flex justify-between text-xs text-slate-400 font-mono">
                     <span id="current-time">00:00</span>
@@ -165,20 +138,14 @@
                 <input type="range" id="seek-bar" min="0" max="100" value="0" step="0.1" class="w-full cursor-pointer accent-indigo-500">
             </div>
 
-            <!-- Controls Row -->
             <div class="flex items-center justify-between pt-2">
-                <!-- Left Controls -->
                 <div class="flex items-center gap-2">
                     <button id="loop-toggle-btn" title="ループ切り替え (L)" class="p-2.5 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/30 transition flex items-center gap-2">
                         <i class="fa-solid fa-repeat text-base"></i>
-                        <span class="text-xs font-semibold hidden sm:inline" id="loop-btn-text">シームレス無限ループ</span>
-                    </button>
-                    <button id="visualizer-toggle-btn" title="ビジュアライザー表示切替" class="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition">
-                        <i class="fa-solid fa-chart-simple text-base"></i>
+                        <span class="text-xs font-semibold hidden sm:inline" id="loop-btn-text">無限ループ ON</span>
                     </button>
                 </div>
 
-                <!-- Center Playback Controls -->
                 <div class="flex items-center gap-3">
                     <button id="rewind-btn" title="5秒戻る (←)" class="p-3 text-slate-400 hover:text-white transition">
                         <i class="fa-solid fa-rotate-left text-lg"></i>
@@ -193,7 +160,6 @@
                     </button>
                 </div>
 
-                <!-- Right Controls: Volume -->
                 <div class="flex items-center gap-2 w-28 sm:w-36 justify-end">
                     <button id="mute-btn" title="消音 (M)" class="text-slate-400 hover:text-white transition p-1">
                         <i id="mute-icon" class="fa-solid fa-volume-high"></i>
@@ -205,7 +171,6 @@
 
     </main>
 
-    <!-- Modal for Keyboard Shortcuts -->
     <div id="shortcuts-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="glass-panel max-w-md w-full rounded-2xl p-6 space-y-4 border border-slate-700">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -233,21 +198,17 @@
                     <span>5秒戻る / 進む</span>
                     <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-xs text-indigo-300">← / →</kbd>
                 </div>
-                <div class="flex justify-between py-1.5">
-                    <span>音量調整</span>
-                    <kbd class="px-2 py-0.5 bg-slate-800 rounded border border-slate-700 font-mono text-xs text-indigo-300">↑ / ↓</kbd>
-                </div>
             </div>
         </div>
     </div>
 
     <footer class="w-full p-4 text-center text-xs text-slate-500">
-        Endless Loop Player &copy; HTML5 Audio & Media Session Sync
+        Endless Loop Player &copy; iOS Background Play Compatible
     </footer>
 
     <script>
         // DOM Elements
-        const audio = document.getElementById('audio-player');
+        const audioPlayer = document.getElementById('audio-player');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const lrcInput = document.getElementById('lrc-input');
@@ -269,48 +230,26 @@
         const volumeBar = document.getElementById('volume-bar');
         const muteBtn = document.getElementById('mute-btn');
         const muteIcon = document.getElementById('mute-icon');
-
         const loopToggleBtn = document.getElementById('loop-toggle-btn');
         const loopBtnText = document.getElementById('loop-btn-text');
-        const visualizerToggleBtn = document.getElementById('visualizer-toggle-btn');
 
         const shortcutsBtn = document.getElementById('shortcuts-btn');
         const shortcutsModal = document.getElementById('shortcuts-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
-        const canvas = document.getElementById('visualizer');
-        const ctx = canvas.getContext('2d');
 
-        // Web Audio Context for Canvas Visualizer Only
-        let audioCtx = null;
-        let analyserNode = null;
-        let mediaSourceNode = null;
-        let isAudioContextConnected = false;
-
-        // Player State
-        let currentTrackName = '';
-        let isLooping = true;
-        let volume = 0.8;
-        let isMuted = false;
-        let lastVolume = 0.8;
-        let visualizerMode = 0; // 0: Wave, 1: Spectrum, 2: Off
-        let currentAudioObjectUrl = null;
-
-        // LRC Lyrics State
         let parsedLyrics = [];
+        let currentFileName = "";
 
-        // Audio initial loop state
-        audio.loop = true;
-        audio.volume = volume;
-
-        // Canvas Resizing
-        function resizeCanvas() {
-            canvas.width = dropZone.clientWidth;
-            canvas.height = dropZone.clientHeight;
+        // iOS Audio Session 設定（マナーモード回避 & バックグラウンド再生維持）
+        if ('audioSession' in navigator) {
+            try {
+                navigator.audioSession.type = 'playback';
+            } catch (e) {
+                console.log('AudioSession 設定非対応');
+            }
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        // LRC File Parser
+        // LRC Parser
         function parseLRC(lrcText) {
             const lines = lrcText.split('\n');
             const result = [];
@@ -324,85 +263,15 @@
                     const milliseconds = parseInt(match[3].padEnd(3, '0'), 10);
                     const time = minutes * 60 + seconds + milliseconds / 1000;
                     const text = line.replace(timeRegex, '').trim();
-
-                    if (text) {
-                        result.push({ time, text });
-                    }
+                    if (text) result.push({ time, text });
                 }
             });
-
             return result.sort((a, b) => a.time - b.time);
         }
 
-        // Initialize AudioContext only for visualizer rendering
-        function initVisualizerNode() {
-            if (isAudioContextConnected) return;
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
-                analyserNode = audioCtx.createAnalyser();
-                analyserNode.fftSize = 256;
-                
-                mediaSourceNode = audioCtx.createMediaElementSource(audio);
-                mediaSourceNode.connect(analyserNode);
-                analyserNode.connect(audioCtx.destination);
-                
-                isAudioContextConnected = true;
-            } catch (e) {
-                console.log("AudioContext initialization note:", e);
-            }
-        }
-
-        function ensureAudioContextResumed() {
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-
-        // Media Session API Setup for Background Lock Screen Controls
-        function setupMediaSession(title) {
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.metadata = new MediaMetadata({
-                    title: title || 'ローカル音声ファイル',
-                    artist: 'Endless Loop Player',
-                    album: '無限ループ再生中',
-                    artwork: [
-                        { src: 'https://placehold.co/192x192/4f46e5/ffffff?text=Audio', sizes: '192x192', type: 'image/png' },
-                        { src: 'https://placehold.co/512x512/4f46e5/ffffff?text=Audio', sizes: '512x512', type: 'image/png' }
-                    ]
-                });
-
-                navigator.mediaSession.setActionHandler('play', () => playAudio());
-                navigator.mediaSession.setActionHandler('pause', () => pauseAudio());
-                navigator.mediaSession.setActionHandler('seekbackward', () => seekRelative(-5));
-                navigator.mediaSession.setActionHandler('seekforward', () => seekRelative(5));
-                navigator.mediaSession.setActionHandler('seekto', (details) => {
-                    if (details.seekTime !== undefined && audio.duration) {
-                        audio.currentTime = details.seekTime;
-                        updateProgressUI();
-                    }
-                });
-            }
-        }
-
-        // Drag and Drop Handlers
+        // Drag & Drop
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, e => {
-                e.preventDefault();
-                e.stopPropagation();
-            }, false);
-        });
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('border-indigo-500', 'bg-slate-900/90');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('border-indigo-500', 'bg-slate-900/90');
-            }, false);
+            dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
         });
 
         dropZone.addEventListener('drop', e => {
@@ -427,21 +296,14 @@
             reader.onload = function(e) {
                 parsedLyrics = parseLRC(e.target.result);
                 lyricsDisplay.textContent = '♪ 歌詞が読み込まれました';
+                updateMediaSession();
             };
             reader.readAsText(file);
         }
 
         function handleAudioFile(file) {
-            // Revoke old URL if existing to free memory
-            if (currentAudioObjectUrl) {
-                URL.revokeObjectURL(currentAudioObjectUrl);
-            }
-
-            currentAudioObjectUrl = URL.createObjectURL(file);
-            audio.src = currentAudioObjectUrl;
-
-            currentTrackName = file.name.replace(/\.[^/.]+$/, "");
-            songTitle.textContent = currentTrackName;
+            currentFileName = file.name.replace(/\.[^/.]+$/, "");
+            songTitle.textContent = currentFileName;
             
             uploadPrompt.classList.add('hidden');
             trackInfo.classList.remove('hidden');
@@ -451,59 +313,31 @@
                 lyricsDisplay.textContent = '♪ 歌詞 (.lrc) をドロップで追加できます';
             }
 
-            // Setup Media Session Metadata for Lock Screen Controls
-            setupMediaSession(currentTrackName);
+            const objectUrl = URL.createObjectURL(file);
+            audioPlayer.src = objectUrl;
+            audioPlayer.volume = volumeBar.value;
+            audioPlayer.loop = true;
 
-            // Connect AudioContext Visualizer on user interaction
-            initVisualizerNode();
-
-            audio.play().then(() => {
-                ensureAudioContextResumed();
+            audioPlayer.play().then(() => {
                 updatePlayButtonUI(true);
-            }).catch(err => {
-                console.log("Autoplay handle:", err);
-            });
+                setupMediaSession();
+            }).catch(err => console.log("再生エラー:", err));
+
+            songMeta.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
         }
 
-        // Native HTML5 Audio Event Listeners for Reliable Background Tracking
-        audio.addEventListener('loadedmetadata', () => {
-            durationTimeEl.textContent = formatTime(audio.duration);
-            const sizeMb = (fileInput.files[0] ? fileInput.files[0].size / (1024 * 1024) : 0).toFixed(2);
-            songMeta.textContent = `${sizeMb > 0 ? sizeMb + ' MB • ' : ''}${formatTime(audio.duration)}`;
+        // Audio Player Events
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            durationTimeEl.textContent = formatTime(audioPlayer.duration);
         });
 
-        audio.addEventListener('timeupdate', updateProgressUI);
-
-        audio.addEventListener('play', () => {
-            updatePlayButtonUI(true);
-            ensureAudioContextResumed();
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-        });
-
-        audio.addEventListener('pause', () => {
-            updatePlayButtonUI(false);
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-        });
-
-        function updateProgressUI() {
-            if (!audio.duration) return;
-
-            const current = audio.currentTime;
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (!audioPlayer.duration) return;
+            const current = audioPlayer.currentTime;
             currentTimeEl.textContent = formatTime(current);
-            seekBar.value = (current / audio.duration) * 100;
+            seekBar.value = (current / audioPlayer.duration) * 100;
 
-            // Sync Media Session Position State if supported
-            if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
-                try {
-                    navigator.mediaSession.setPositionState({
-                        duration: audio.duration,
-                        playbackRate: audio.playbackRate,
-                        position: audio.currentTime
-                    });
-                } catch(e) {}
-            }
-
-            // --- LRC Lyrics Sync (Works reliably in background) ---
+            // 歌詞の同期
             if (parsedLyrics.length > 0) {
                 let currentText = '';
                 for (let i = 0; i < parsedLyrics.length; i++) {
@@ -513,236 +347,83 @@
                         break;
                     }
                 }
-
                 if (lyricsDisplay.textContent !== currentText && currentText !== '') {
-                    lyricsDisplay.style.opacity = '0';
-                    setTimeout(() => {
-                        lyricsDisplay.textContent = currentText;
-                        lyricsDisplay.style.opacity = '1';
-                    }, 100);
+                    lyricsDisplay.textContent = currentText;
                 }
             }
-        }
-
-        // Audio Playback Controls
-        function playAudio() {
-            if (!audio.src) return;
-            initVisualizerNode();
-            ensureAudioContextResumed();
-            audio.play();
-        }
-
-        function pauseAudio() {
-            if (!audio.src) return;
-            audio.pause();
-        }
-
-        function togglePlay() {
-            if (!audio.src) return;
-            if (audio.paused) {
-                playAudio();
-            } else {
-                pauseAudio();
-            }
-        }
-
-        function updatePlayButtonUI(isPlaying) {
-            if (isPlaying) {
-                playIcon.className = 'fa-solid fa-pause';
-            } else {
-                playIcon.className = 'fa-solid fa-play ml-1';
-            }
-        }
+        });
 
         seekBar.addEventListener('input', () => {
-            if (!audio.duration) return;
-            const targetTime = (seekBar.value / 100) * audio.duration;
-            audio.currentTime = targetTime;
-            currentTimeEl.textContent = formatTime(targetTime);
+            if (!audioPlayer.duration) return;
+            audioPlayer.currentTime = (seekBar.value / 100) * audioPlayer.duration;
         });
 
-        // Seeking Buttons
-        rewindBtn.addEventListener('click', () => seekRelative(-5));
-        forwardBtn.addEventListener('click', () => seekRelative(5));
+        // Controls
+        playBtn.addEventListener('click', () => {
+            if (!audioPlayer.src) return;
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                updatePlayButtonUI(true);
+            } else {
+                audioPlayer.pause();
+                updatePlayButtonUI(false);
+            }
+        });
 
-        function seekRelative(seconds) {
-            if (!audio.duration) return;
-            audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + seconds));
-            updateProgressUI();
+        function updatePlayButtonUI(isPlaying) {
+            playIcon.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play ml-1';
         }
 
-        loopToggleBtn.addEventListener('click', toggleLoopMode);
+        rewindBtn.addEventListener('click', () => audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5));
+        forwardBtn.addEventListener('click', () => audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 5));
 
-        function toggleLoopMode() {
-            isLooping = !isLooping;
-            audio.loop = isLooping;
-
-            if (isLooping) {
+        loopToggleBtn.addEventListener('click', () => {
+            audioPlayer.loop = !audioPlayer.loop;
+            if (audioPlayer.loop) {
                 loopToggleBtn.className = 'p-2.5 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-600/30 transition flex items-center gap-2';
-                loopBtnText.textContent = 'シームレス無限ループ';
-                loopModeTag.textContent = 'バックグラウンド無限ループ有効';
+                loopBtnText.textContent = '無限ループ ON';
+                loopModeTag.textContent = '無限ループ有効';
             } else {
                 loopToggleBtn.className = 'p-2.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition flex items-center gap-2';
-                loopBtnText.textContent = 'ループOFF';
+                loopBtnText.textContent = 'ループ OFF';
                 loopModeTag.textContent = '1回のみ再生';
             }
-        }
+        });
 
-        // Volume Controls
         volumeBar.addEventListener('input', (e) => {
-            volume = parseFloat(e.target.value);
-            audio.volume = volume;
-            isMuted = volume === 0;
-            updateVolumeUI();
+            audioPlayer.volume = parseFloat(e.target.value);
         });
 
-        muteBtn.addEventListener('click', () => {
-            if (isMuted) {
-                volume = lastVolume || 0.8;
-                isMuted = false;
-            } else {
-                lastVolume = volume;
-                volume = 0;
-                isMuted = true;
-            }
-            volumeBar.value = volume;
-            audio.volume = volume;
-            updateVolumeUI();
-        });
+        // iOS Media Session (ロック画面コントロール)
+        function setupMediaSession() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: currentFileName || 'Unknown Track',
+                    artist: 'Endless Loop Player',
+                    album: 'Local Audio'
+                });
 
-        function updateVolumeUI() {
-            if (volume === 0 || isMuted) {
-                muteIcon.className = 'fa-solid fa-volume-xmark text-red-400';
-            } else if (volume < 0.5) {
-                muteIcon.className = 'fa-solid fa-volume-low';
-            } else {
-                muteIcon.className = 'fa-solid fa-volume-high';
+                navigator.mediaSession.setActionHandler('play', () => {
+                    audioPlayer.play();
+                    updatePlayButtonUI(true);
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    audioPlayer.pause();
+                    updatePlayButtonUI(false);
+                });
+                navigator.mediaSession.setActionHandler('seekbackward', () => audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 5));
+                navigator.mediaSession.setActionHandler('seekforward', () => audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 5));
             }
         }
-
-        visualizerToggleBtn.addEventListener('click', () => {
-            visualizerMode = (visualizerMode + 1) % 3;
-            if (visualizerMode === 2) {
-                visualizerToggleBtn.classList.add('text-slate-500');
-            } else {
-                visualizerToggleBtn.classList.remove('text-slate-500');
-            }
-        });
-
-        function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            if (!analyserNode || audio.paused || visualizerMode === 2) return;
-
-            const bufferLength = analyserNode.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-
-            if (visualizerMode === 0) {
-                // Waveform Mode
-                analyserNode.getByteTimeDomainData(dataArray);
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = 'rgba(129, 140, 248, 0.6)';
-                ctx.beginPath();
-
-                const sliceWidth = canvas.width * 1.0 / bufferLength;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 128.0;
-                    const y = (v * canvas.height) / 2;
-
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-
-                    x += sliceWidth;
-                }
-
-                ctx.lineTo(canvas.width, canvas.height / 2);
-                ctx.stroke();
-
-            } else if (visualizerMode === 1) {
-                // Spectrum Bar Mode
-                analyserNode.getByteFrequencyData(dataArray);
-                const barWidth = (canvas.width / bufferLength) * 2.5;
-                let barHeight;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    barHeight = (dataArray[i] / 255) * canvas.height * 0.7;
-
-                    const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
-                    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');
-                    gradient.addColorStop(1, 'rgba(129, 140, 248, 0.8)');
-
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-                    x += barWidth + 1;
-                }
-            }
-        }
-        drawVisualizer();
 
         function formatTime(seconds) {
-            if (isNaN(seconds)) return '00:00';
             const m = Math.floor(seconds / 60);
             const s = Math.floor(seconds % 60);
             return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
         }
 
-        // Global Keyboard Shortcuts
-        window.addEventListener('keydown', (e) => {
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-
-            switch (e.code) {
-                case 'Space':
-                    e.preventDefault();
-                    togglePlay();
-                    break;
-                case 'KeyL':
-                    e.preventDefault();
-                    toggleLoopMode();
-                    break;
-                case 'KeyM':
-                    e.preventDefault();
-                    muteBtn.click();
-                    break;
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    seekRelative(-5);
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    seekRelative(5);
-                    break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    volume = Math.min(1, volume + 0.05);
-                    volumeBar.value = volume;
-                    audio.volume = volume;
-                    updateVolumeUI();
-                    break;
-                case 'ArrowDown':
-                    e.preventDefault();
-                    volume = Math.max(0, volume - 0.05);
-                    volumeBar.value = volume;
-                    audio.volume = volume;
-                    updateVolumeUI();
-                    break;
-            }
-        });
-
-        // Modal Handlers
-        playBtn.addEventListener('click', togglePlay);
         shortcutsBtn.addEventListener('click', () => shortcutsModal.classList.remove('hidden'));
         closeModalBtn.addEventListener('click', () => shortcutsModal.classList.add('hidden'));
-        shortcutsModal.addEventListener('click', (e) => {
-            if (e.target === shortcutsModal) shortcutsModal.classList.add('hidden');
-        });
     </script>
 </body>
 </html>
