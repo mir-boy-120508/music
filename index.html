@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M4A Endless Loop & Lyrics Player</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Yuji+Syuku&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .handwritten {
+            font-family: 'Yuji Syuku', serif, cursive;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 9999px;
+            height: 6px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col p-4 md:p-6 gap-4 justify-between overflow-hidden">
+
+    <!-- Header Section -->
+    <header class="flex justify-between items-center z-10 px-2">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-rotate-right text-indigo-400 text-lg animate-spin-slow"></i>
+            <span class="font-bold tracking-wider text-sm md:text-base bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">LOOP LYRIC PLAYER</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <label for="lrc-input" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+                <i class="fa-solid fa-file-lines text-indigo-400"></i> 歌詞(.lrc)読み込み
+            </label>
+            <input type="file" id="lrc-input" accept=".lrc,.txt" class="hidden">
+            
+            <label for="file-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-xs text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-file-audio"></i> 音声選択
+            </label>
+            <input type="file" id="file-input" accept="audio/*,.m4a" class="hidden">
+        </div>
+    </header>
+
+    <!-- MAIN AREA: Hand-drawn Layout Target (Title + Visualizer + Overlapped Lyrics) -->
+    <main id="drop-zone" class="flex-1 relative border-2 border-slate-700 rounded-2xl bg-slate-900/60 backdrop-blur-md overflow-hidden flex flex-col items-center justify-between p-6 group transition duration-300">
+        
+        <!-- Background Canvas Visualizer (The Wave / Equalizer Bars) -->
+        <canvas id="visualizer" class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-80"></canvas>
+
+        <!-- Dynamic Drop Overlay / Empty Prompt -->
+        <div id="drop-prompt" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/80 p-6 text-center transition-opacity duration-300">
+            <div class="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 text-3xl mb-4">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-1">M4A ファイルをここにドロップ</h2>
+            <p class="text-sm text-slate-400 mb-4">.m4a, .mp3, .lrc (歌詞ファイル) を受け付けます</p>
+            <label for="file-input" class="cursor-pointer bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/40">
+                ファイルを選択して再生
+            </label>
+        </div>
+
+        <!-- TOP: Song Title (my song) -->
+        <div class="relative z-10 text-center w-full pt-2">
+            <h1 id="song-title" class="text-3xl md:text-5xl font-extrabold tracking-tight text-white drop-shadow-md truncate max-w-2xl mx-auto">
+                my song
+            </h1>
+            <p id="song-info" class="text-xs text-indigo-300/80 font-mono mt-1">音声を読み込んでください</p>
+        </div>
+
+        <!-- CENTER & BOTTOM OVERLAY: Handwritten Big Lyrics Overlapped on Visualizer -->
+        <div class="relative z-20 w-full flex-1 flex flex-col justify-end items-center pb-4 min-h-[180px]">
+            <div id="lyrics-container" class="w-full max-h-[220px] overflow-y-auto text-center space-y-3 px-4 handwritten scroll-smooth">
+                <!-- Dynamic active lyric will appear here -->
+                <p class="text-2xl md:text-4xl font-bold text-white tracking-widest drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] animate-pulse">
+                    さあ〜じんせいに〜
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- BOTTOM CONTROL BAR: Hand-drawn Bottom Frame -->
+    <footer class="w-full border-2 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-md p-4 flex flex-col gap-3 shadow-xl z-20">
+        <!-- Progress Bar -->
+        <div class="flex items-center gap-3 w-full">
+            <span id="current-time" class="text-xs font-mono text-slate-400 w-10 text-right">00:00</span>
+            <input type="range" id="seek-bar" min="0" max="100" value="0" step="0.1" class="flex-1 cursor-pointer accent-indigo-500">
+            <span id="duration-time" class="text-xs font-mono text-slate-400 w-10">00:00</span>
+        </div>
+
+        <!-- Control Buttons Row -->
+        <div class="flex items-center justify-between">
+            <!-- Left: Loop Toggle -->
+            <button id="loop-btn" class="px-3 py-1.5 rounded-xl bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 hover:bg-indigo-600/50 transition">
+                <i class="fa-solid fa-repeat"></i>
+                <span id="loop-status">無限ループ ON</span>
+            </button>
+
+            <!-- Center: Play / Pause Controls -->
+            <div class="flex items-center gap-4">
+                <button id="rewind-btn" class="text-slate-400 hover:text-white transition p-2" title="-5秒">
+                    <i class="fa-solid fa-rotate-left text-lg"></i>
+                </button>
+                <button id="play-btn" class="w-12 h-12 rounded-full bg-white text-slate-950 flex items-center justify-center text-xl shadow-lg hover:scale-105 active:scale-95 transition">
+                    <i id="play-icon" class="fa-solid fa-play ml-0.5"></i>
+                </button>
+                <button id="forward-btn" class="text-slate-400 hover:text-white transition p-2" title="+5秒">
+                    <i class="fa-solid fa-rotate-right text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Right: Volume -->
+            <div class="flex items-center gap-2">
+                <i id="mute-icon" class="fa-solid fa-volume-high text-xs text-slate-400"></i>
+                <input type="range" id="volume-bar" min="0" max="1" step="0.01" value="0.8" class="w-20 cursor-pointer accent-indigo-500">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const dropPrompt = document.getElementById('drop-prompt');
+        const fileInput = document.getElementById('file-input');
+        const lrcInput = document.getElementById('lrc-input');
+        const songTitle = document.getElementById('song-title');
+        const songInfo = document.getElementById('song-info');
+        const lyricsContainer = document.getElementById('lyrics-container');
+
+        const playBtn = document.getElementById('play-btn');
+        const playIcon = document.getElementById('play-icon');
+        const rewindBtn = document.getElementById('rewind-btn');
+        const forwardBtn = document.getElementById('forward-btn');
+        const seekBar = document.getElementById('seek-bar');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationTimeEl = document.getElementById('duration-time');
+        const loopBtn = document.getElementById('loop-btn');
+        const loopStatus = document.getElementById('loop-status');
+        const volumeBar = document.getElementById('volume-bar');
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+
+        // Audio Context & State
+        let audioCtx = null;
+        let audioBuffer = null;
+        let sourceNode = null;
+        let gainNode = null;
+        let analyserNode = null;
+
+        let isPlaying = false;
+        let isLooping = true;
+        let startTime = 0;
+        let pauseOffset = 0;
+        let lyrics = []; // Array of { time, text }
+
+        // Resize Canvas
+        function resizeCanvas() {
+            canvas.width = dropZone.clientWidth;
+            canvas.height = dropZone.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioCtx();
+                gainNode = audioCtx.createGain();
+                analyserNode = audioCtx.createAnalyser();
+                analyserNode.fftSize = 128;
+                gainNode.connect(analyserNode);
+                analyserNode.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // File Drag and Drop Handling
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        dropZone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFiles(files);
+            }
+        });
+
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length > 0) handleFiles(e.target.files);
+        });
+
+        lrcInput.addEventListener('change', e => {
+            if (e.target.files.length > 0) handleLrcFile(e.target.files[0]);
+        });
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.name.endsWith('.lrc') || file.name.endsWith('.txt')) {
+                    handleLrcFile(file);
+                } else if (file.type.startsWith('audio/') || file.name.endsWith('.m4a')) {
+                    handleAudioFile(file);
+                }
+            }
+        }
+
+        function handleAudioFile(file) {
+            initAudio();
+            songTitle.textContent = file.name.replace(/\.[^/.]+$/, "");
+            songInfo.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB • M4A Audio`;
+            dropPrompt.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                audioCtx.decodeAudioData(e.target.result, decoded => {
+                    audioBuffer = decoded;
+                    durationTimeEl.textContent = formatTime(audioBuffer.duration);
+                    pauseOffset = 0;
+                    playAudio();
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleLrcFile(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                parseLrc(e.target.result);
+            };
+            reader.readAsText(file);
+        }
+
+        function parseLrc(text) {
+            lyrics = [];
+            const lines = text.split('\n');
+            const timeReg = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+
+            lines.forEach(line => {
+                const match = timeReg.exec(line);
+                if (match) {
+                    const min = parseInt(match[1]);
+                    const sec = parseInt(match[2]);
+                    const ms = parseInt(match[3].padEnd(3, '0'));
+                    const time = min * 60 + sec + ms / 1000;
+                    const lyricText = line.replace(timeReg, '').trim();
+                    if (lyricText) {
+                        lyrics.push({ time, text: lyricText });
+                    }
+                }
+            });
+
+            lyrics.sort((a, b) => a.time - b.time);
+            renderLyrics();
+        }
+
+        function renderLyrics() {
+            lyricsContainer.innerHTML = '';
+            if (lyrics.length === 0) {
+                lyricsContainer.innerHTML = `<p class="text-2xl md:text-4xl font-bold text-white tracking-widest drop-shadow-md">さあ〜じんせいに〜</p>`;
+                return;
+            }
+
+            lyrics.forEach((item, index) => {
+                const p = document.createElement('p');
+                p.id = `lyric-${index}`;
+                p.textContent = item.text;
+                p.className = 'text-xl md:text-3xl font-bold text-slate-400/60 transition-all duration-300 cursor-pointer hover:text-slate-200';
+                p.onclick = () => {
+                    pauseOffset = item.time;
+                    if (isPlaying) {
+                        stopAudio();
+                        playAudio();
+                    } else {
+                        currentTimeEl.textContent = formatTime(pauseOffset);
+                    }
+                };
+                lyricsContainer.appendChild(p);
+            });
+        }
+
+        function playAudio() {
+            if (!audioBuffer) return;
+            initAudio();
+
+            sourceNode = audioCtx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.loop = isLooping;
+            sourceNode.connect(gainNode);
+
+            startTime = audioCtx.currentTime - pauseOffset;
+            sourceNode.start(0, pauseOffset % audioBuffer.duration);
+
+            isPlaying = true;
+            playIcon.className = 'fa-solid fa-pause';
+            requestAnimationFrame(updateLoop);
+        }
+
+        function stopAudio() {
+            if (sourceNode) {
+                try { sourceNode.stop(); sourceNode.disconnect(); } catch(e) {}
+                sourceNode = null;
+            }
+            isPlaying = false;
+            playIcon.className = 'fa-solid fa-play ml-0.5';
+        }
+
+        playBtn.onclick = () => {
+            if (!audioBuffer) return;
+            if (isPlaying) {
+                pauseOffset = audioCtx.currentTime - startTime;
+                stopAudio();
+            } else {
+                playAudio();
+            }
+        };
+
+        rewindBtn.onclick = () => seekRelative(-5);
+        forwardBtn.onclick = () => seekRelative(5);
+
+        function seekRelative(sec) {
+            if (!audioBuffer) return;
+            let cur = isPlaying ? (audioCtx.currentTime - startTime) % audioBuffer.duration : pauseOffset;
+            pauseOffset = Math.max(0, Math.min(audioBuffer.duration, cur + sec));
+            if (isPlaying) {
+                stopAudio();
+                playAudio();
+            } else {
+                currentTimeEl.textContent = formatTime(pauseOffset);
+                seekBar.value = (pauseOffset / audioBuffer.duration) * 100;
+            }
+        }
+
+        seekBar.oninput = () => {
+            if (!audioBuffer) return;
+            pauseOffset = (seekBar.value / 100) * audioBuffer.duration;
+            if (isPlaying) {
+                stopAudio();
+                playAudio();
+            } else {
+                currentTimeEl.textContent = formatTime(pauseOffset);
+            }
+        };
+
+        loopBtn.onclick = () => {
+            isLooping = !isLooping;
+            if (sourceNode) sourceNode.loop = isLooping;
+            loopStatus.textContent = isLooping ? '無限ループ ON' : 'ループ OFF';
+            loopBtn.className = isLooping 
+                ? 'px-3 py-1.5 rounded-xl bg-indigo-600/30 border border-indigo-500/50 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 hover:bg-indigo-600/50 transition'
+                : 'px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 text-xs font-semibold flex items-center gap-1.5 transition';
+        };
+
+        volumeBar.oninput = (e) => {
+            const vol = parseFloat(e.target.value);
+            if (gainNode) gainNode.gain.setValueAtTime(vol, audioCtx.currentTime);
+        };
+
+        function updateLoop() {
+            if (!isPlaying || !audioBuffer) return;
+
+            let cur = (audioCtx.currentTime - startTime) % audioBuffer.duration;
+            currentTimeEl.textContent = formatTime(cur);
+            seekBar.value = (cur / audioBuffer.duration) * 100;
+
+            // Highlight Lyrics
+            if (lyrics.length > 0) {
+                let activeIdx = -1;
+                for (let i = 0; i < lyrics.length; i++) {
+                    if (cur >= lyrics[i].time) activeIdx = i;
+                    else break;
+                }
+
+                lyrics.forEach((_, idx) => {
+                    const el = document.getElementById(`lyric-${idx}`);
+                    if (!el) return;
+                    if (idx === activeIdx) {
+                        el.className = 'text-2xl md:text-4xl font-extrabold text-white scale-105 tracking-widest drop-shadow-[0_4px_16px_rgba(99,102,241,0.8)] transition-all duration-300 my-2';
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        el.className = 'text-lg md:text-2xl font-bold text-slate-400/50 transition-all duration-300 my-1';
+                    }
+                });
+            }
+
+            drawVisualizer();
+            requestAnimationFrame(updateLoop);
+        }
+
+        function drawVisualizer() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!analyserNode || !isPlaying) return;
+
+            const bufferLength = analyserNode.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserNode.getByteFrequencyData(dataArray);
+
+            const barWidth = (canvas.width / bufferLength) * 2.2;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = (dataArray[i] / 255) * canvas.height * 0.6;
+
+                const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.1)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+
+                x += barWidth;
+            }
+        }
+
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
